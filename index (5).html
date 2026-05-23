@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FADENTIX — Liquidación de Sueldos Uruguay</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#185FA5;--blue-d:#0C447C;--blue-l:#E6F1FB;--blue-ll:#f0f6fd;
+  --red:#A32D2D;--red-l:#FCEBEB;--green:#2d6a11;--green-l:#EAF3DE;
+  --amber:#854F0B;--amber-l:#FFF3DC;--purple:#5B3FA8;--purple-l:#EDE8FB;
+  --g50:#F8F9FA;--g100:#F1F3F5;--g200:#E9ECEF;--g300:#DEE2E6;
+  --g400:#CED4DA;--g500:#ADB5BD;--g600:#6C757D;--g800:#343A40;--g900:#212529;
+  --sw:232px;--r:8px;--rlg:12px;--shm:0 4px 16px rgba(0,0,0,.10);
+}
+body{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:var(--g900);background:var(--g100);line-height:1.5;overflow-x:hidden}
+input,select,textarea,button{font-family:inherit;font-size:13px}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+textarea{resize:vertical}
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--sw);background:#fff;border-right:1px solid var(--g200);display:flex;flex-direction:column;padding:18px 0 14px;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;transition:transform .25s}
+.main{margin-left:var(--sw);flex:1;min-height:100vh}
+.page{padding:24px 28px;max-width:760px}
+.logo-wrap{display:flex;align-items:center;gap:10px;padding:0 16px 16px;border-bottom:1px solid var(--g200);margin-bottom:10px}
+.logo-mark{width:36px;height:36px;background:var(--blue);border-radius:var(--r);color:#fff;font-size:19px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-name{font-size:14px;font-weight:700}.logo-sub{font-size:10px;color:var(--g600)}
+.periodo-sel{margin:0 12px 12px;width:calc(100% - 24px);padding:7px 9px;border:1px solid var(--g300);border-radius:var(--r);background:var(--g50)}
+.nav{display:flex;flex-direction:column;gap:2px;padding:0 8px;flex:1}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r);border:none;background:none;cursor:pointer;font-size:13px;color:var(--g800);text-align:left;width:100%;transition:background .12s}
+.nav-btn:hover{background:var(--g100)}.nav-btn.active{background:var(--blue-l);color:var(--blue-d);font-weight:600}
+.nav-btn .ico{font-size:15px;width:20px;text-align:center}
+.sb-actions{padding:12px 12px 0;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--g200);margin-top:10px}
+.ab{padding:7px 10px;border-radius:var(--r);border:1px solid var(--blue);background:var(--blue);color:#fff;font-size:12px;cursor:pointer;font-weight:500;text-align:center}
+.ab:hover{background:var(--blue-d)}.ab.out{background:none;color:var(--blue)}.ab.out:hover{background:var(--blue-l)}
+.sb-info{padding:10px 14px 0;font-size:11px;color:var(--g500);line-height:1.8}
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.sync-dot.ok{background:#2d6a11}.sync-dot.local{background:#854F0B}.sync-dot.conn{background:#185FA5}
+.toast{position:fixed;top:16px;right:20px;padding:10px 16px;border-radius:var(--r);font-size:13px;z-index:9999;box-shadow:var(--shm);display:none;max-width:320px}
+.toast.show{display:block;animation:tin .2s}
+.toast.ok{background:#fff;border-left:4px solid var(--green)}
+.toast.err{background:var(--red-l);border-left:4px solid var(--red);color:var(--red)}
+.toast.info{background:var(--blue-l);border-left:4px solid var(--blue);color:var(--blue-d)}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;gap:12px;flex-wrap:wrap}
+.ph h1{font-size:19px;font-weight:700}.ph-sub{font-size:12px;color:var(--g600);margin-top:2px}
+.ph-btns{display:flex;gap:8px;flex-shrink:0}
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.mc{background:#fff;border-radius:var(--r);padding:12px 14px;border:1px solid var(--g200)}
+.mc.hl{border-color:var(--blue)}.mc-l{font-size:11px;color:var(--g600);margin-bottom:3px}.mc-v{font-size:18px;font-weight:700}
+.mc-v.blue{color:var(--blue)}.mc-v.red{color:var(--red)}.mc-v.green{color:var(--green)}
+.frow{display:grid;grid-template-columns:1fr 1fr 180px;gap:8px;margin-bottom:1rem}
+.frow input,.frow select{width:100%;padding:7px 10px;border:1px solid var(--g300);border-radius:var(--r);background:#fff}
+.tbl-wrap{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);overflow:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}
+table.tbl thead th{padding:9px 11px;text-align:left;font-size:11px;font-weight:600;color:var(--g600);text-transform:uppercase;letter-spacing:.04em;background:var(--g50);border-bottom:1px solid var(--g200);white-space:nowrap}
+table.tbl tbody td{padding:9px 11px;border-bottom:1px solid var(--g100)}
+table.tbl tbody tr:last-child td{border-bottom:none}
+table.tbl tbody tr.tr-c{cursor:pointer}
+table.tbl tbody tr.tr-c:hover td{background:var(--blue-ll)}
+.tn{color:var(--g600);font-weight:500;width:44px}.tnom{font-weight:500;min-width:160px}
+.tcargo{color:var(--g600);max-width:180px}.tm{text-align:right;white-space:nowrap}
+.tm.b{color:var(--blue)}.tm.r{color:var(--red)}.tm.g{color:var(--green);font-weight:600}
+.pill{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:2px}
+.pill.m{background:var(--amber-l);color:var(--amber)}.pill.l{background:var(--blue-l);color:var(--blue-d)}
+.pill.baja{background:var(--red-l);color:var(--red)}.pill.rj{background:var(--red-l);color:var(--red)}
+.ib{background:none;border:none;cursor:pointer;font-size:14px;padding:3px 5px;border-radius:4px}
+.ib:hover{background:var(--g100)}.ib.d:hover{background:var(--red-l)}
+.empty-msg{padding:2rem;text-align:center;color:var(--g500)}
+.obs-cell{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--purple);cursor:pointer}
+.obs-cell:hover{text-decoration:underline}
+.obs-inline{width:100%;padding:4px 6px;border:1px solid var(--blue);border-radius:4px;font-size:12px}
+.fgrid{display:flex;flex-direction:column;gap:1rem;max-width:720px}
+.fcard{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:1.2rem}
+.fct{font-size:13px;font-weight:600;color:var(--g800);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.fsep{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--g400);margin:12px 0 8px;border-top:1px solid var(--g100);padding-top:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:500;color:var(--g600)}
+.field label .note{font-size:10px;color:var(--g400);font-weight:400;margin-left:5px}
+.field input,.field select,.field textarea{padding:7px 10px;border:1px solid var(--g300);border-radius:var(--r);background:#fff;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.08)}
+.chks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ck{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.ck input[type=checkbox]{width:15px;height:15px;accent-color:var(--blue)}
+.ctbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+.ctbl thead th{padding:6px 8px;text-align:left;font-size:10px;font-weight:600;color:var(--g600);text-transform:uppercase;background:var(--g50);border-bottom:1px solid var(--g200)}
+.ctbl tbody td{padding:4px 6px;border-bottom:1px solid var(--g100);vertical-align:middle}
+.ctbl .imp-cell{text-align:right;font-weight:600;color:var(--blue);white-space:nowrap}
+.cant-inp{width:68px;padding:4px 6px;border:1px solid var(--g300);border-radius:4px;text-align:center;background:#fff}
+.cant-inp:focus{outline:none;border-color:var(--blue)}
+.btn{padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:background .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--blue-d)}.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-s{background:none;color:var(--g800);border:1px solid var(--g300)}.btn-s:hover{background:var(--g100)}
+.btn-add{padding:7px 12px;background:none;border:1px dashed var(--blue);color:var(--blue);border-radius:var(--r);cursor:pointer;font-size:12px;width:100%;font-family:inherit;margin-top:6px}
+.btn-add:hover{background:var(--blue-l)}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.rmini{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:14px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.rmini:hover{box-shadow:var(--shm);border-color:var(--blue)}
+.rmini-nom{font-size:13px;font-weight:600;margin-bottom:3px}.rmini-cargo{font-size:11px;color:var(--g600);margin-bottom:8px}
+.rmini-liq{font-size:20px;font-weight:700;color:var(--green);margin-bottom:6px}.rmini-btn{font-size:11px;color:var(--blue);font-weight:500}
+.itbl{width:100%;border-collapse:collapse;font-size:13px}
+.itbl th{padding:7px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--g600);text-transform:uppercase;border-bottom:1px solid var(--g200)}
+.itbl td{padding:7px 10px;border-bottom:1px solid var(--g100)}
+.itbl .tot-r td{background:var(--g50);font-weight:600}.itbl .hl-r td{background:var(--blue-l);color:var(--blue-d);font-weight:600}
+.ngrid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.ncard{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:1.2rem}
+.ntit{font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--g100)}
+.nrow{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--g50);font-size:12px}
+.nrow:last-child{border-bottom:none}.nk{color:var(--g600)}.nv{text-align:right;font-weight:500}
+.regla-row{display:grid;grid-template-columns:2fr 110px 100px auto 80px 36px;gap:8px;align-items:end;background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:10px;margin-bottom:6px}
+.cc{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:1.25rem;margin-bottom:1rem;max-width:720px}
+.cc h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.step-list{list-style:none;counter-reset:s}
+.step-list li{counter-increment:s;display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--g100);font-size:13px}
+.step-list li:last-child{border-bottom:none}
+.step-list li::before{content:counter(s);background:var(--blue);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.fb-ok{background:var(--green-l);color:var(--green);border:1px solid #b6dba6;padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:1rem}
+.fb-local{background:var(--amber-l);color:var(--amber);border:1px solid #f0c070;padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:1rem}
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--blue);color:#fff;border:none;border-radius:var(--r);width:36px;height:36px;font-size:18px;cursor:pointer;align-items:center;justify-content:center}
+@media(max-width:800px){
+  :root{--sw:0px}
+  .sidebar{transform:translateX(-232px)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.page{padding:14px 12px}.ph{padding-top:44px}
+  .mrow{grid-template-columns:1fr 1fr}.frow{grid-template-columns:1fr}
+  .ngrid{grid-template-columns:1fr}.menu-toggle{display:flex}
+  .regla-row{grid-template-columns:1fr 1fr 1fr}
+}
+
+.login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0C447C,#185FA5);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:#fff;border-radius:16px;padding:2.5rem;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
+.login-logo{width:56px;height:56px;background:var(--blue);border-radius:12px;color:#fff;font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.login-title{font-size:20px;font-weight:700;margin-bottom:4px}.login-sub{font-size:12px;color:var(--g600);margin-bottom:1.5rem}
+.login-inp{width:100%;padding:10px 14px;border:1px solid var(--g300);border-radius:var(--r);font-size:14px;text-align:center;letter-spacing:2px;margin-bottom:1rem}
+.login-inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.login-btn{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer}
+.login-btn:hover{background:var(--blue-d)}.login-err{color:var(--red);font-size:12px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">F</div>
+    <div class="login-title">FADENTIX</div>
+    <div class="login-sub">Liquidación de Sueldos Uruguay</div>
+    <input class="login-inp" type="password" id="login-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkLogin()">
+    <button class="login-btn" onclick="checkLogin()">Ingresar</button>
+    <div class="login-err" id="login-err">Contraseña incorrecta</div>
+  </div>
+</div>
+<script>
+function checkLogin(){
+  const p=document.getElementById('login-pass').value;
+  if(p==='GAONA123'){
+    document.getElementById('login-overlay').style.display='none';
+    sessionStorage.setItem('fadentix_auth','1');
+  } else {
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-pass').focus();
+  }
+}
+if(sessionStorage.getItem('fadentix_auth')!=='1'){
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('login-overlay').style.display='flex';
+  });
+} else {
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('login-overlay').style.display='none';
+  });
+}
+</script>
+
+<button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<aside class="sidebar" id="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-mark">F</div>
+    <div><div class="logo-name">FADENTIX</div><div class="logo-sub">Sueldos Uruguay</div></div>
+  </div>
+  <select class="periodo-sel" id="periodo-sel" onchange="cambiarPeriodo(this.value)">
+    <option>Mayo 2026</option><option>Junio 2026</option><option>Julio 2026</option>
+    <option>Agosto 2026</option><option>Septiembre 2026</option><option>Octubre 2026</option>
+    <option>Noviembre 2026</option><option>Diciembre 2026</option>
+  </select>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('nomina',this)"><span class="ico">👥</span>Nómina</button>
+    <button class="nav-btn" onclick="showPage('form',this)"><span class="ico">✏️</span>Liquidar empleado</button>
+    <button class="nav-btn" onclick="showPage('recibos',this)"><span class="ico">📄</span>Recibos PDF</button>
+    <button class="nav-btn" onclick="showPage('reglas',this)"><span class="ico">⚙️</span>Reglas de cálculo</button>
+    <button class="nav-btn" onclick="showPage('irpf',this)"><span class="ico">📊</span>IRPF / BPS</button>
+    <button class="nav-btn" onclick="showPage('normas',this)"><span class="ico">📋</span>Normativa</button>
+    <button class="nav-btn" onclick="showPage('firebase',this)"><span class="ico">🔥</span>Firebase / Nube</button>
+  </nav>
+  <div class="sb-actions">
+    <button class="ab" onclick="exportExcel()">⬇ Exportar Excel</button>
+    <button class="ab" onclick="exportNominaPDF()">⬇ PDF Nómina</button>
+    <button class="ab out" onclick="cargarDemo()">⬆ Cargar demo</button>
+  </div>
+  <div class="sb-info">
+    <div><span class="sync-dot local" id="sync-dot"></span><span id="sync-label">Modo local</span></div>
+    <div id="sb-count" style="margin-top:2px">0 empleados</div>
+  </div>
+</aside>
+
+<div class="main">
+<div class="toast" id="toast"></div>
+
+<!-- NÓMINA -->
+<div class="page" id="page-nomina">
+  <div class="ph">
+    <div><h1>Nómina — <span id="titulo-periodo">Mayo 2026</span></h1>
+    <div class="ph-sub">Clic en fila para editar · Observaciones editables directamente</div></div>
+    <div class="ph-btns"><button class="btn btn-p" onclick="abrirFormNuevo()">+ Nuevo empleado</button></div>
+  </div>
+  <div class="mrow" id="nomina-metrics"></div>
+  <div class="frow">
+    <input id="f-nom" placeholder="Buscar nombre o N°…" oninput="renderNomina()">
+    <input id="f-cargo" placeholder="Filtrar por cargo…" oninput="renderNomina()">
+    <select id="f-sit" onchange="renderNomina()">
+      <option value="">Todas las situaciones</option>
+      <option value="obs">Con observaciones</option>
+      <option value="cert">Con certificado</option>
+      <option value="maternal">Maternal</option>
+      <option value="baja">Baja</option>
+      <option value="ret">Retención judicial</option>
+    </select>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th>N°</th><th>Nombre</th><th>Cargo</th>
+        <th style="text-align:right">Sueldo</th><th style="text-align:right">Haberes</th>
+        <th style="text-align:right">BPS</th><th style="text-align:right">IRPF</th>
+        <th style="text-align:right">Líquido</th>
+        <th>Observaciones</th><th>Sit.</th><th></th>
+      </tr></thead>
+      <tbody id="nomina-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="page" id="page-form" style="display:none">
+  <div class="ph">
+    <div><h1 id="form-titulo">Nuevo empleado</h1>
+    <div class="ph-sub">Ingresá cantidades — los importes se calculan según las reglas configuradas en ⚙️</div></div>
+    <div class="ph-btns">
+      <button class="btn btn-s" onclick="showPage('nomina',null)">Cancelar</button>
+      <button class="btn btn-p" onclick="guardarEmpleado()">💾 Guardar</button>
+    </div>
+  </div>
+  <div class="mrow">
+    <div class="mc"><div class="mc-l">Total haberes</div><div class="mc-v blue" id="fm-hab">$0</div></div>
+    <div class="mc"><div class="mc-l">BPS (18%)</div><div class="mc-v red" id="fm-bps">$0</div></div>
+    <div class="mc"><div class="mc-l">IRPF / IASS</div><div class="mc-v red" id="fm-irpf">$0</div></div>
+    <div class="mc hl"><div class="mc-l">Líquido a cobrar</div><div class="mc-v green" id="fm-liq">$0</div></div>
+  </div>
+  <div class="fgrid">
+
+    <div class="fcard">
+      <div class="fct">👤 Datos del empleado</div>
+      <div class="g2">
+        <div class="field"><label>N° empleado</label><input id="f-numero" type="text"></div>
+        <div class="field"><label>Cédula de identidad</label><input id="f-ci" type="text"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Nombre completo</label><input id="f-nombre" type="text"></div>
+        <div class="field"><label>Cargo / Categoría</label><input id="f-cargof" type="text"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Fecha de ingreso</label><input id="f-ingreso" type="date" oninput="autoAntig()"></div>
+        <div class="field"><label>IRPF / IASS</label>
+          <select id="f-aporte" onchange="recalcLive()">
+            <option value="0.196">19.6%</option><option value="0.211">21.1%</option>
+            <option value="0.216">21.6%</option><option value="0.231">23.1%</option>
+          </select>
+        </div>
+      </div>
+      <div class="fsep">Aportes SNISAD (seguro salud adicional)</div>
+      <div class="g2">
+        <div class="field"><label>Situación familiar</label>
+          <select id="f-snisad-tipo" onchange="calcSnisad();recalcLive()">
+            <option value="0">Sin beneficiarios (0%)</option>
+            <option value="conyuge">Con cónyuge/concubino (2%)</option>
+            <option value="hijos">Con hijos menores</option>
+            <option value="ambos">Con cónyuge + hijos</option>
+          </select>
+        </div>
+        <div class="field" id="f-hijos-wrap" style="display:none">
+          <label>Cantidad de hijos menores</label>
+          <input id="f-hijos" type="number" min="0" max="10" value="1" oninput="calcSnisad();recalcLive()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--purple);padding:4px 0 8px 2px">
+        SNISAD: <strong id="snisad-label">0%</strong> = <strong id="snisad-monto">$0</strong>
+      </div>
+    </div>
+    </div>
+
+    <div class="fcard">
+      <div class="fct">💰 Haberes fijos</div>
+      <div class="g2">
+        <div class="field"><label>Sueldo nominal ($)</label><input id="f-sueldo" type="number" min="0" value="0" oninput="autoAntig();recalcTodosConceptos();recalcLive()"></div>
+        <div class="field"><label>Presentismo ($)</label><input id="f-presentismo" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Antigüedad ($) <span class="note">auto por fecha</span></label><input id="f-antiguedad" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Quebranto de caja ($)</label><input id="f-queb" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Horario maternal ($)</label><input id="f-mat" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Horario lactancia ($)</label><input id="f-lact" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+    </div>
+
+    <div class="fcard">
+      <div class="fct">⏱ Horas y jornales — ingresá la CANTIDAD</div>
+      <div style="background:var(--blue-l);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--blue-d);margin-bottom:12px;line-height:1.7">
+        💡 El importe se calcula automáticamente según las reglas configuradas en <strong>⚙️ Reglas de cálculo</strong>.<br>
+        Podés cambiar los factores, el divisor de horas/días y agregar tus propios conceptos.
+      </div>
+      <table class="ctbl">
+        <thead><tr><th style="width:44%">Concepto</th><th style="text-align:center;width:75px">Cantidad</th><th style="text-align:right;width:110px">Importe $</th><th style="width:90px;text-align:center">Fórmula</th></tr></thead>
+        <tbody id="conceptos-tbody"></tbody>
+      </table>
+      <div class="fsep">Variables propias de este empleado</div>
+      <div id="vars-emp"></div>
+      <button class="btn-add" onclick="agregarVarEmp()">+ Agregar concepto variable para este empleado</button>
+    </div>
+
+    <div class="fcard">
+      <div class="fct">➖ Descuentos y deducciones</div>
+      <div class="fsep">Inasistencias</div>
+      <div class="g2">
+        <div class="field"><label>Faltas comunes (días)</label><input id="f-falt-c" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Faltas BPS / BSE (días)</label><input id="f-falt-b" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Llegadas tarde (horas)</label><input id="f-tarde" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Descuento quebranto ($)</label><input id="f-dqueb" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="fsep">Adelantos y créditos</div>
+      <div class="g2">
+        <div class="field"><label>Adelanto sobre salario ($)</label><input id="f-adel" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Adelanto sobre nómina ($)</label><input id="f-adel-n" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Créditos de la casa ($)</label><input id="f-cred" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Vale del período ($)</label><input id="f-vale" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Sobregiro sueldo ($)</label><input id="f-sob" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"></div>
+      </div>
+      <div class="fsep">Mutuales</div>
+      <div class="g2">
+        <div class="field"><label>ANDA ($)</label><input id="f-anda" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>CASH ($)</label><input id="f-cash" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>FUCAC ($)</label><input id="f-fucac" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>CACSOL ($)</label><input id="f-cacsol" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+      <div class="fsep">Retención judicial</div>
+      <div class="g2">
+        <div class="field"><label>Monto fijo ($)</label><input id="f-ret" type="number" min="0" value="0" oninput="recalcLive()"></div>
+        <div class="field"><label>Porcentaje (%) <span class="note">calcula solo</span></label><input id="f-ret-pct" type="number" min="0" value="0" oninput="recalcLive()"></div>
+      </div>
+    </div>
+
+    <div class="fcard">
+      <div class="fct">📝 Situaciones especiales y observaciones</div>
+      <div class="g2" style="margin-bottom:10px">
+        <div class="field"><label>Días libres trabajados</label><input id="f-dlibres" type="number" min="0" value="0"></div>
+        <div class="field"><label>Medios libres trabajados</label><input id="f-mlibres" type="number" min="0" value="0"></div>
+      </div>
+      <div class="chks">
+        <label class="ck"><input type="checkbox" id="f-chk-mat"> Licencia maternal</label>
+        <label class="ck"><input type="checkbox" id="f-chk-lact"> Lactancia vigente</label>
+        <label class="ck"><input type="checkbox" id="f-chk-lic"> En licencia</label>
+        <label class="ck"><input type="checkbox" id="f-chk-bse"> Subsidio BSE</label>
+        <label class="ck"><input type="checkbox" id="f-chk-baja"> Baja</label>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Observaciones <span class="note">aparece en recibo y nómina</span></label>
+        <textarea id="f-obs" rows="4" placeholder="Ej: Certificado 11/05 al 16/05 — Retención judicial 20%"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECIBOS -->
+<div class="page" id="page-recibos" style="display:none">
+  <div class="ph"><h1>Recibos PDF — <span id="rec-periodo"></span></h1>
+  <div class="ph-sub">Clic en una tarjeta para descargar el PDF</div></div>
+  <div class="rgrid" id="recibos-grid"></div>
+</div>
+
+<!-- REGLAS DE CÁLCULO -->
+<div class="page" id="page-reglas" style="display:none">
+  <div class="ph">
+    <div><h1>⚙️ Reglas de cálculo</h1>
+    <div class="ph-sub">Modificá factores, divisores y conceptos libremente</div></div>
+    <div class="ph-btns">
+      <button class="btn btn-s" onclick="resetearReglas()">↺ Restaurar</button>
+      <button class="btn btn-p" onclick="guardarReglas()">💾 Guardar reglas</button>
+    </div>
+  </div>
+  <div style="background:var(--blue-l);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--blue-d);margin-bottom:1.25rem;line-height:1.7">
+    <strong>Fórmula por cantidad:</strong> Importe = Sueldo ÷ Divisor × Cantidad × Factor<br>
+    <strong>% del sueldo:</strong> Importe = Sueldo × Factor% (se suma automáticamente, no necesita cantidad)<br>
+    <strong>Importe fijo:</strong> Se suma el valor del Factor directamente a todos los empleados
+  </div>
+
+  <div style="background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:1rem;margin-bottom:1rem">
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px">📐 Bases de cálculo</div>
+    <div class="g2">
+      <div class="field">
+        <label>Horas mensuales (divisor para hora)</label>
+        <input type="number" id="base-horas" value="190" min="1" oninput="guardarReglas(false)">
+        <span style="font-size:10px;color:var(--g500)">Valor hora = Sueldo ÷ este número. Uruguay: 190 hs (8 hs × 25 días - tolerancias)</span>
+      </div>
+      <div class="field">
+        <label>Días mensuales (divisor para jornal)</label>
+        <input type="number" id="base-dias" value="25" min="1" oninput="guardarReglas(false)">
+        <span style="font-size:10px;color:var(--g500)">Valor jornal = Sueldo ÷ este número. Uruguay: 25 días</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:1rem;margin-bottom:1rem">
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px">📋 Conceptos del convenio</div>
+    <p style="font-size:12px;color:var(--g600);margin-bottom:12px">Cada fila es un concepto. Podés renombrarlo, cambiar el tipo de base y el factor. Los cambios se aplican a todas las liquidaciones.</p>
+    <div style="display:grid;grid-template-columns:2fr 110px 100px auto 80px 36px;gap:8px;margin-bottom:6px;font-size:10px;font-weight:600;color:var(--g500);text-transform:uppercase;padding:0 12px">
+      <span>Nombre del concepto</span><span>Tipo base</span><span>Factor ×</span><span>Resultado con $50.000</span><span>Activo</span><span></span>
+    </div>
+    <div id="reglas-lista"></div>
+    <button class="btn-add" onclick="agregarRegla()">+ Agregar nuevo concepto al convenio</button>
+  </div>
+</div>
+
+<!-- IRPF -->
+<div class="page" id="page-irpf" style="display:none">
+  <div class="ph"><h1>IRPF y Aportes BPS — 2026</h1></div>
+  <p style="font-size:13px;color:var(--g600);margin-bottom:1.25rem">BPC mayo 2026: <strong>$6.644</strong></p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    <div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">Franjas IRPF Cat. II</div>
+      <table class="itbl" id="irpf-tbl"></table>
+      <div style="font-size:13px;font-weight:600;margin:1.25rem 0 10px">Aportes BPS</div>
+      <table class="itbl">
+        <thead><tr><th>Concepto</th><th>Trabajador</th><th>Patronal</th></tr></thead>
+        <tbody>
+          <tr><td>Jubilación</td><td>15%</td><td>7.5%</td></tr>
+          <tr><td>DISSE (enfermedad)</td><td>3%</td><td>5%</td></tr>
+          <tr><td>FRL</td><td>—</td><td>0.125%</td></tr>
+          <tr><td>BSE</td><td>—</td><td>Variable</td></tr>
+          <tr class="tot-r"><td><strong>TOTAL</strong></td><td><strong>18%</strong></td><td><strong>12.625%+</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">Simulador IRPF</div>
+      <div class="field" style="margin-bottom:10px"><label>Sueldo nominal ($)</label><input type="number" id="sim-sueldo" placeholder="Ej: 50000" oninput="simIRPF()"></div>
+      <div id="sim-resultado"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NORMATIVA -->
+<div class="page" id="page-normas" style="display:none">
+  <div class="ph"><h1>Normativa Laboral Uruguay 2026</h1></div>
+  <div class="ngrid">
+    <div class="ncard"><div class="ntit">📅 Plazos mensuales</div>
+      <div class="nrow"><span class="nk">Pago de sueldos</span><span class="nv">Hasta día 5</span></div>
+      <div class="nrow"><span class="nk">Declaración BPS</span><span class="nv">Hasta día 10</span></div>
+      <div class="nrow"><span class="nk">Retención IRPF</span><span class="nv">Mes siguiente</span></div>
+      <div class="nrow"><span class="nk">Planilla MTSS</span><span class="nv">Ante cada cambio</span></div>
+    </div>
+    <div class="ncard"><div class="ntit">💰 Conv. Grupo 7 — Factores</div>
+      <div class="nrow"><span class="nk">Presentismo</span><span class="nv">8.33% sueldo</span></div>
+      <div class="nrow"><span class="nk">Antigüedad</span><span class="nv">1% por año</span></div>
+      <div class="nrow"><span class="nk">Hs nocturnas (22–06)</span><span class="nv">× 1.25</span></div>
+      <div class="nrow"><span class="nk">Horas extras comunes</span><span class="nv">× 2.00</span></div>
+      <div class="nrow"><span class="nk">Horas extras descanso</span><span class="nv">× 2.50</span></div>
+      <div class="nrow"><span class="nk">Feriado trabajado</span><span class="nv">× 2.00 + compensatorio</span></div>
+      <div class="nrow"><span class="nk">Día libre trabajado</span><span class="nv">× 1.5 jornales</span></div>
+      <div class="nrow"><span class="nk">Medio libre trabajado</span><span class="nv">× 0.5 jornal</span></div>
+    </div>
+    <div class="ncard"><div class="ntit">🌴 Licencias</div>
+      <div class="nrow"><span class="nk">Licencia anual</span><span class="nv">20 días mínimo</span></div>
+      <div class="nrow"><span class="nk">Maternal</span><span class="nv">14 semanas — BPS</span></div>
+      <div class="nrow"><span class="nk">Paternidad</span><span class="nv">13 días</span></div>
+      <div class="nrow"><span class="nk">Lactancia</span><span class="nv">Reducción sin descuento</span></div>
+    </div>
+    <div class="ncard"><div class="ntit">📊 Aguinaldo e indemnización</div>
+      <div class="nrow"><span class="nk">Aguinaldo / 13°</span><span class="nv">50% mejor jornal × m/6</span></div>
+      <div class="nrow"><span class="nk">Preaviso</span><span class="nv">Proporcional antigüedad</span></div>
+      <div class="nrow"><span class="nk">Indemnización</span><span class="nv">1 mes/año (máx 6)</span></div>
+      <div class="nrow"><span class="nk">BPC Mayo 2026</span><span class="nv">$6.644</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<div class="page" id="page-firebase" style="display:none">
+  <div class="ph"><h1>🔥 Firebase — Trabajo en equipo</h1></div>
+  <div id="fb-banner"></div>
+  <div class="cc"><h3>¿Para qué sirve Firebase?</h3>
+    <p style="font-size:13px;color:var(--g600);line-height:1.7">Con Firebase activado, <strong>todos los usuarios ven y editan la misma nómina en tiempo real</strong>. Sin Firebase, cada navegador guarda sus propios datos. Es gratis hasta 50.000 lecturas/día.</p>
+  </div>
+  <div class="cc"><h3>Cómo configurarlo (5 pasos)</h3>
+    <ol class="step-list">
+      <li>Ir a <strong>console.firebase.google.com</strong> → Crear proyecto <strong>fadentix-sueldos</strong></li>
+      <li>Firestore Database → Crear base de datos → Modo prueba → Región <strong>southamerica-east1</strong></li>
+      <li>⚙️ Configuración → Agregar app web → Copiar el bloque <strong>firebaseConfig</strong></li>
+      <li>Pegar los valores en el formulario de abajo</li>
+      <li>Clic en <strong>Conectar</strong> — en segundos todos los usuarios se sincronizan</li>
+    </ol>
+  </div>
+  <div class="cc"><h3>Pegar tu configuración</h3>
+    <div class="g2">
+      <div class="field"><label>apiKey</label><input id="fb-apiKey" type="text" placeholder="AIzaSy..."></div>
+      <div class="field"><label>authDomain</label><input id="fb-authDomain" type="text" placeholder="proyecto.firebaseapp.com"></div>
+    </div>
+    <div class="g2">
+      <div class="field"><label>projectId</label><input id="fb-projectId" type="text" placeholder="mi-proyecto-id"></div>
+      <div class="field"><label>storageBucket</label><input id="fb-storageBucket" type="text" placeholder="proyecto.appspot.com"></div>
+    </div>
+    <div class="g2">
+      <div class="field"><label>messagingSenderId</label><input id="fb-messagingSenderId" type="text" placeholder="123456789"></div>
+      <div class="field"><label>appId</label><input id="fb-appId" type="text" placeholder="1:123:web:abc"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-p" onclick="guardarConfigFirebase()">🔥 Conectar Firebase</button>
+      <button class="btn btn-s" onclick="desconectarFirebase()">Desconectar</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- FIREBASE MODULE -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+let db=null,unsub=null;
+window._fbActivo=false;
+const FB_CONFIG={
+  apiKey:"AIzaSyA0cRZ4sQYHBsQTNpuCS7DMz_a3VnJ6Fes",
+  authDomain:"archibox-fadentix-sa.firebaseapp.com",
+  projectId:"archibox-fadentix-sa",
+  storageBucket:"archibox-fadentix-sa.firebasestorage.app",
+  messagingSenderId:"19853231730",
+  appId:"1:19853231730:web:4c11634e0e0b9470df24eb"
+};
+async function initFB(cfg){
+  try{
+    setSyncState('conn','Conectando…');
+    const app=initializeApp(cfg);db=getFirestore(app);window._fbActivo=true;
+    window._fbSave=async(emp)=>{const id=emp.id||String(emp.numero||Date.now());await setDoc(doc(db,'periodos',window._periodo||'Mayo 2026','empleados',id),{...emp,id,updatedAt:serverTimestamp()},{merge:true});};
+    window._fbDel=async(id)=>{await deleteDoc(doc(db,'periodos',window._periodo||'Mayo 2026','empleados',id));};
+    window._fbSub=()=>{if(unsub)unsub();const q=query(collection(db,'periodos',window._periodo||'Mayo 2026','empleados'),orderBy('numero','asc'));unsub=onSnapshot(q,(snap)=>{window._empleados=snap.docs.map(d=>({id:d.id,...d.data()}));if(window._actualizarSBCount)window._actualizarSBCount();if(window._renderNomina)window._renderNomina();showToast('Sincronizado ✓','info');},(err)=>showToast('Error sync: '+err.message,'err'));};
+    setSyncState('ok','Firebase activo 🟢');showToast('Firebase conectado ✓','ok');
+    window._fbSub();renderFBBanner();
+  }catch(e){setSyncState('local','Error Firebase');showToast('Error: '+e.message,'err');}
+}
+window.guardarConfigFirebase=function(){
+  const cfg={apiKey:document.getElementById('fb-apiKey').value.trim(),authDomain:document.getElementById('fb-authDomain').value.trim(),projectId:document.getElementById('fb-projectId').value.trim(),storageBucket:document.getElementById('fb-storageBucket').value.trim(),messagingSenderId:document.getElementById('fb-messagingSenderId').value.trim(),appId:document.getElementById('fb-appId').value.trim()};
+  if(!cfg.apiKey||!cfg.projectId){showToast('Completá apiKey y projectId','err');return;}
+  localStorage.setItem('fadentix_fb',JSON.stringify(cfg));initFB(cfg);
+};
+window.desconectarFirebase=function(){localStorage.removeItem('fadentix_fb');if(unsub)unsub();db=null;window._fbActivo=false;setSyncState('local','Modo local');renderFBBanner();showToast('Firebase desconectado');};
+function renderFBBanner(){const b=document.getElementById('fb-banner');if(!b)return;b.innerHTML=window._fbActivo?'<div class="fb-ok">🟢 Firebase activo — sincronización en tiempo real entre todos los usuarios</div>':'<div class="fb-local">🟡 Modo local — datos guardados solo en este navegador. Configurá Firebase para compartir con tu equipo.</div>';}
+window._renderFBBanner=renderFBBanner;
+// Auto-conectar con config integrada
+initFB(FB_CONFIG);
+</script>
+
+<script>
+// ══════════════════════════════════════════════
+// REGLAS CONFIGURABLES
+// ══════════════════════════════════════════════
+const DEF_REGLAS=[
+  {id:'noct-f', nombre:'Hs nocturnas fijas',       tipo:'hora',   factor:1.25, activo:true},
+  {id:'noct-v', nombre:'Hs nocturnas variables',    tipo:'hora',   factor:1.25, activo:true},
+  {id:'noct-p', nombre:'Hs nocturnas período',      tipo:'hora',   factor:1.25, activo:true},
+  {id:'hcom',   nombre:'Horas comunes',              tipo:'hora',   factor:1,    activo:true},
+  {id:'ext',    nombre:'Hs extras comunes',          tipo:'hora',   factor:2,    activo:true},
+  {id:'ext-d',  nombre:'Hs extras en descanso',      tipo:'hora',   factor:2.5,  activo:true},
+  {id:'ext-f',  nombre:'Hs extras fijas',            tipo:'hora',   factor:2,    activo:true},
+  {id:'fer-c',  nombre:'Hs comunes en feriado',      tipo:'hora',   factor:2,    activo:true},
+  {id:'fer-e',  nombre:'Hs extras en feriado',       tipo:'hora',   factor:2.5,  activo:true},
+  {id:'fer-ed', nombre:'Hs ext feriado descanso',    tipo:'hora',   factor:3,    activo:true},
+  {id:'fer-cd', nombre:'Hs com feriado descanso',    tipo:'hora',   factor:2,    activo:true},
+  {id:'jornal', nombre:'Jornal trabajado',           tipo:'jornal', factor:1,    activo:true},
+  {id:'libre',  nombre:'Día libre trabajado',        tipo:'jornal', factor:1.5,  activo:true},
+  {id:'mlibre', nombre:'Medio libre trabajado',      tipo:'jornal', factor:0.5,  activo:true},
+];
+let reglas=[], baseHoras=190, baseDias=25;
+
+function cargarReglas(){
+  try{
+    const s=JSON.parse(localStorage.getItem('fadentix_reglas')||'null');
+    if(s){reglas=s.reglas||JSON.parse(JSON.stringify(DEF_REGLAS));baseHoras=s.baseHoras||190;baseDias=s.baseDias||25;}
+    else{reglas=JSON.parse(JSON.stringify(DEF_REGLAS));}
+  }catch{reglas=JSON.parse(JSON.stringify(DEF_REGLAS));}
+}
+
+function guardarReglas(toast=true){
+  const bh=document.getElementById('base-horas');if(bh)baseHoras=+bh.value||190;
+  const bd=document.getElementById('base-dias');if(bd)baseDias=+bd.value||25;
+  reglas.forEach(r=>{
+    const n=document.getElementById('rn-'+r.id);if(n)r.nombre=n.value||r.nombre;
+    const t=document.getElementById('rt-'+r.id);if(t)r.tipo=t.value||r.tipo;
+    const f=document.getElementById('rf-'+r.id);if(f)r.factor=+f.value||r.factor;
+    const a=document.getElementById('ra-'+r.id);if(a)r.activo=a.checked;
+  });
+  localStorage.setItem('fadentix_reglas',JSON.stringify({reglas,baseHoras,baseDias}));
+  if(toast)showToast('Reglas guardadas ✓');
+  renderReglas();
+  recalcTodosConceptos();
+  recalcLive();
+}
+
+function resetearReglas(){
+  if(!confirm('¿Restaurar las reglas predeterminadas de Uruguay?'))return;
+  reglas=JSON.parse(JSON.stringify(DEF_REGLAS));baseHoras=190;baseDias=25;
+  localStorage.setItem('fadentix_reglas',JSON.stringify({reglas,baseHoras,baseDias}));
+  const bh=document.getElementById('base-horas');if(bh)bh.value=190;
+  const bd=document.getElementById('base-dias');if(bd)bd.value=25;
+  renderReglas();recalcTodosConceptos();recalcLive();
+  showToast('Reglas restauradas ✓');
+}
+
+function agregarRegla(){
+  const id='r'+Date.now();
+  reglas.push({id,nombre:'Nuevo concepto',tipo:'hora',factor:1,activo:true});
+  renderReglas();
+}
+
+function eliminarRegla(id){
+  reglas=reglas.filter(r=>r.id!==id);
+  renderReglas();renderConceptosForm();recalcLive();
+}
+
+function renderReglas(){
+  const cont=document.getElementById('reglas-lista');if(!cont)return;
+  cont.innerHTML=reglas.map(r=>{
+    const s=50000;
+    let ej='—';
+    if(r.tipo==='hora')ej=fmt(Math.round((s/baseHoras)*r.factor))+' / hora';
+    else if(r.tipo==='jornal')ej=fmt(Math.round((s/baseDias)*r.factor))+' / jornal';
+    else if(r.tipo==='pct')ej=fmt(Math.round(s*r.factor/100))+' automático';
+    else if(r.tipo==='fijo')ej=fmt(r.factor)+' fijo';
+    return `<div class="regla-row" style="opacity:${r.activo?1:0.5}">
+      <div class="field"><label style="font-size:10px">Nombre</label>
+        <input id="rn-${r.id}" type="text" value="${r.nombre}" style="font-size:12px" oninput="guardarReglas(false)"></div>
+      <div class="field"><label style="font-size:10px">Tipo</label>
+        <select id="rt-${r.id}" style="font-size:12px" onchange="guardarReglas(false)">
+          <option value="hora" ${r.tipo==='hora'?'selected':''}>Hora (÷${baseHoras})</option>
+          <option value="jornal" ${r.tipo==='jornal'?'selected':''}>Jornal (÷${baseDias})</option>
+          <option value="pct" ${r.tipo==='pct'?'selected':''}>% del sueldo</option>
+          <option value="fijo" ${r.tipo==='fijo'?'selected':''}>Importe fijo $</option>
+        </select></div>
+      <div class="field"><label style="font-size:10px">${r.tipo==='pct'?'Porcentaje %':r.tipo==='fijo'?'Importe $':'Factor ×'}</label>
+        <input id="rf-${r.id}" type="number" min="0" step="0.01" value="${r.factor}" style="font-size:12px" oninput="guardarReglas(false)"></div>
+      <div style="font-size:11px;color:var(--blue-d);padding-top:16px;white-space:nowrap">${ej}</div>
+      <div class="field" style="padding-top:14px">
+        <label class="ck"><input type="checkbox" id="ra-${r.id}" ${r.activo?'checked':''} onchange="guardarReglas(false)"> Activo</label>
+      </div>
+      <div style="padding-top:12px">
+        <button onclick="eliminarRegla('${r.id}')" style="background:var(--red-l);border:none;border-radius:var(--r);color:var(--red);cursor:pointer;padding:5px 8px;font-size:12px">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// CÁLCULO
+// ══════════════════════════════════════════════
+function calcImp(cant,sueldo,tipo,factor){
+  const c=+cant||0;
+  if(tipo==='hora') return Math.round((sueldo/baseHoras)*c*factor);
+  if(tipo==='jornal') return Math.round((sueldo/baseDias)*c*factor);
+  if(tipo==='pct') return Math.round(sueldo*(factor/100));
+  if(tipo==='fijo') return Math.round(+factor);
+  return 0;
+}
+
+function calcConceptos(e){
+  const s=+e.sueldo||0;
+  let total=0;const det=[];
+  reglas.filter(r=>r.activo).forEach(r=>{
+    const cant=+e['c_'+r.id]||0;
+    if(cant===0&&r.tipo!=='pct'&&r.tipo!=='fijo')return;
+    const imp=calcImp(cant,s,r.tipo,r.factor);
+    if(imp===0)return;
+    total+=imp;det.push({nombre:r.nombre,cantidad:cant,importe:imp,tipo:r.tipo});
+  });
+  (e.varsEmp||[]).forEach(v=>{
+    const imp=calcImp(v.cantidad,s,v.tipo,v.factor);
+    if(imp===0)return;
+    total+=imp;det.push({nombre:v.nombre,cantidad:v.cantidad,importe:imp,tipo:v.tipo});
+  });
+  return{total:Math.round(total),det};
+}
+
+function calcSnisadPct(e){
+  const tipo=e.snisadTipo||'0';
+  const hijos=+e.hijosSnisad||0;
+  if(tipo==='conyuge') return 2;
+  if(tipo==='hijos') return 1.5*Math.max(1,hijos);
+  if(tipo==='ambos') return 2+1.5*Math.max(1,hijos);
+  return 0;
+}
+function liquidar(e){
+  const s=+e.sueldo||0,jd=s/30,hv=s/(30*8);
+  const descFalt=Math.round((+e.faltasComunes||0)*jd);
+  const descTard=Math.round((+e.llegadasTarde||0)*hv);
+  const{total:conceptos,det}=calcConceptos(e);
+  const hab=Math.round(s+(+e.presentismo||0)+(+e.antiguedad||0)+
+    (+e.horarioMaternal||0)+(+e.horarioLactancia||0)+(+e.quebranto||0)+conceptos);
+  const bpsJub=Math.round(hab*.15);
+  const bpsDisse=Math.round(hab*.03);
+  const bpsFrl=Math.round(hab*.001);
+  const snisadPct=calcSnisadPct(e);
+  const bpsSnisad=Math.round(hab*(snisadPct/100));
+  const bps=bpsJub+bpsDisse+bpsFrl+bpsSnisad;
+  const baseIRPF=Math.max(0,hab-bps);
+  const irpf=Math.round(baseIRPF*(+(e.pctAporte||.196)));
+  let ret=+(e.retencionJudicial||0);
+  if((+e.pctRetencion||0)>0&&ret===0)ret=Math.round(hab*(+e.pctRetencion/100));
+  const descOtros=Math.round((+e.descuentoQuebranto||0)+descFalt+descTard+
+    (+e.adelanto||0)+(+e.adelantoNomina||0)+(+e.creditosCasa||0)+
+    (+e.vale||0)+(+e.sobregiróSueldo||0)+(+e.anda||0)+(+e.cash||0)+
+    (+e.fucac||0)+(+e.cacsol||0)+ret);
+  return{hab,bps,bpsJub,bpsDisse,bpsFrl,bpsSnisad,snisadPct,irpf,baseIRPF,
+    descFalt,descTard,ret,descOtros,det,liq:Math.max(0,hab-bps-irpf-descOtros)};
+}
+
+const fmt=n=>'$\u00a0'+(Math.round(n)||0).toLocaleString('es-UY');
+const fmtN=n=>(Math.round(n)||0).toLocaleString('es-UY');
+
+// ══════════════════════════════════════════════
+// TABLA CONCEPTOS EN FORM
+// ══════════════════════════════════════════════
+function renderConceptosForm(){
+  const tbody=document.getElementById('conceptos-tbody');if(!tbody)return;
+  const s=+document.getElementById('f-sueldo')?.value||0;
+  const activas=reglas.filter(r=>r.activo&&(r.tipo==='hora'||r.tipo==='jornal'));
+  const pctAuto=reglas.filter(r=>r.activo&&r.tipo==='pct');
+  const fijoAuto=reglas.filter(r=>r.activo&&r.tipo==='fijo');
+  let html=activas.map(r=>{
+    const cant=+document.getElementById('cr-'+r.id)?.value||0;
+    const imp=calcImp(cant,s,r.tipo,r.factor);
+    const formula=r.tipo==='hora'?`÷${baseHoras}×${r.factor}`:`÷${baseDias}×${r.factor}`;
+    const bg=r.tipo==='jornal'?'background:var(--amber-l);':'';
+    return `<tr style="${bg}">
+      <td style="padding:5px 8px;color:var(--g800)">${r.nombre}</td>
+      <td style="padding:4px 6px;text-align:center">
+        <input class="cant-inp" id="cr-${r.id}" type="number" min="0" step="0.5" value="${cant||''}" placeholder="0"
+          oninput="updConcept('cr-${r.id}','ci-${r.id}',${r.tipo==='hora'?1:2},${r.factor});recalcLive()">
+      </td>
+      <td class="imp-cell" id="ci-${r.id}" style="padding:5px 8px">${imp>0?fmt(imp):'—'}</td>
+      <td style="padding:5px 8px;text-align:center;font-size:10px;color:var(--g500)">${formula}</td>
+    </tr>`;
+  }).join('');
+  if(pctAuto.length||fijoAuto.length){
+    html+=`<tr><td colspan="4" style="padding:4px 8px;font-size:10px;font-weight:600;color:var(--g500);background:var(--g50);text-transform:uppercase">Automáticos (sin cantidad)</td></tr>`;
+    [...pctAuto,...fijoAuto].forEach(r=>{
+      const imp=calcImp(1,s,r.tipo,r.factor);
+      html+=`<tr style="background:#f9f0ff"><td style="padding:5px 8px;color:var(--g800)">${r.nombre}</td><td style="text-align:center;color:var(--g500);font-size:11px;padding:4px 6px">auto</td><td class="imp-cell" style="padding:5px 8px">${imp>0?fmt(imp):'—'}</td><td style="padding:5px 8px;text-align:center;font-size:10px;color:var(--g500)">${r.tipo==='pct'?r.factor+'%':'fijo'}</td></tr>`;
+    });
+  }
+  tbody.innerHTML=html;
+}
+
+function updConcept(cantId,impId,tipoN,factor){
+  const s=+document.getElementById('f-sueldo')?.value||0;
+  const cant=+document.getElementById(cantId)?.value||0;
+  const tipo=tipoN===1?'hora':'jornal';
+  const imp=calcImp(cant,s,tipo,factor);
+  const el=document.getElementById(impId);if(el)el.textContent=imp>0?fmt(imp):'—';
+  const row=document.getElementById(cantId)?.closest('tr');
+  if(row&&tipo!=='jornal')row.style.background=imp>0?'#f0f7ee':'';
+}
+
+function recalcTodosConceptos(){
+  renderConceptosForm();renderVarsEmp();
+}
+
+// ══════════════════════════════════════════════
+// VARIABLES DEL EMPLEADO
+// ══════════════════════════════════════════════
+let varsEmpActuales=[];
+
+function agregarVarEmp(){
+  varsEmpActuales.push({id:'ve'+Date.now(),nombre:'',tipo:'hora',factor:1,cantidad:0});
+  renderVarsEmp();
+}
+
+function renderVarsEmp(){
+  const cont=document.getElementById('vars-emp');if(!cont)return;
+  const s=+document.getElementById('f-sueldo')?.value||0;
+  cont.innerHTML=varsEmpActuales.map(v=>{
+    const imp=calcImp(v.cantidad,s,v.tipo,v.factor);
+    return `<div style="display:grid;grid-template-columns:1fr 90px 80px 70px 30px;gap:6px;align-items:end;margin-bottom:8px;padding:10px;background:var(--purple-l);border-radius:var(--r);border:1px solid #cfc0f0">
+      <div class="field"><label style="color:var(--purple);font-size:10px">Nombre del concepto</label>
+        <input type="text" value="${v.nombre}" placeholder="Ej: Viáticos" style="font-size:12px" onchange="updVE('${v.id}','nombre',this.value)"></div>
+      <div class="field"><label style="color:var(--purple);font-size:10px">Tipo</label>
+        <select style="font-size:12px" onchange="updVE('${v.id}','tipo',this.value);renderVarsEmp();recalcLive()">
+          <option value="hora" ${v.tipo==='hora'?'selected':''}>Por hora</option>
+          <option value="jornal" ${v.tipo==='jornal'?'selected':''}>Por jornal</option>
+          <option value="fijo" ${v.tipo==='fijo'?'selected':''}>Importe fijo $</option>
+          <option value="pct" ${v.tipo==='pct'?'selected':''}>% del sueldo</option>
+        </select></div>
+      <div class="field"><label style="color:var(--purple);font-size:10px">${v.tipo==='fijo'?'Importe $':v.tipo==='pct'?'Porcentaje %':'Factor ×'}</label>
+        <input type="number" min="0" step="0.01" value="${v.factor}" style="font-size:12px" onchange="updVE('${v.id}','factor',+this.value);renderVarsEmp();recalcLive()"></div>
+      <div class="field"><label style="color:var(--purple);font-size:10px">${v.tipo==='fijo'||v.tipo==='pct'?'—':'Cantidad'}</label>
+        <input type="number" min="0" step="0.5" value="${v.cantidad}" ${v.tipo==='fijo'||v.tipo==='pct'?'disabled':''} style="font-size:12px" onchange="updVE('${v.id}','cantidad',+this.value);renderVarsEmp();recalcLive()"></div>
+      <button onclick="elimVE('${v.id}')" style="background:var(--red-l);border:none;border-radius:4px;color:var(--red);cursor:pointer;height:32px;font-size:14px">×</button>
+    </div>
+    <div style="font-size:11px;color:var(--purple);margin:-4px 0 8px 4px">Importe: <strong>${imp>0?fmt(imp):'$0 (ingresá el sueldo primero)'}</strong></div>`;
+  }).join('');
+}
+
+function updVE(id,k,v){const ve=varsEmpActuales.find(x=>x.id===id);if(ve)ve[k]=v;}
+function elimVE(id){varsEmpActuales=varsEmpActuales.filter(v=>v.id!==id);renderVarsEmp();recalcLive();}
+
+// ══════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════
+let periodoActual='Mayo 2026';
+let editandoId=null;
+window._empleados=[];
+window._periodo='Mayo 2026';
+
+function skLocal(p){return 'fadentix_'+(p||periodoActual).replace(/ /g,'_');}
+function getEmpleados(){return window._empleados||[];}
+function loadLocal(){try{window._empleados=JSON.parse(localStorage.getItem(skLocal())||'[]');}catch{window._empleados=[];}actualizarSBCount();}
+function saveLocal(){localStorage.setItem(skLocal(),JSON.stringify(window._empleados));}
+function actualizarSBCount(){const n=getEmpleados().length;document.getElementById('sb-count').textContent=n+' empleado'+(n===1?'':'s');}
+window._actualizarSBCount=actualizarSBCount;
+
+async function saveEmp(emp){
+  if(window._fbActivo&&window._fbSave){await window._fbSave(emp);return;}
+  const idx=window._empleados.findIndex(e=>e.id===emp.id);
+  if(idx>=0)window._empleados[idx]=emp;else window._empleados.push(emp);
+  saveLocal();actualizarSBCount();
+}
+
+async function eliminarEmp(id,nombre){
+  if(!confirm('¿Eliminar a '+nombre+'?'))return;
+  if(window._fbActivo&&window._fbDel){await window._fbDel(id);}
+  else{window._empleados=window._empleados.filter(e=>e.id!==id);saveLocal();renderNomina();}
+  showToast('Empleado eliminado');
+}
+
+// ══════════════════════════════════════════════
+// NAVEGACIÓN
+// ══════════════════════════════════════════════
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.getElementById('page-'+id).style.display='';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  else document.querySelectorAll('.nav-btn').forEach(b=>{if((b.getAttribute('onclick')||'').includes("'"+id+"'"))b.classList.add('active');});
+  if(id==='nomina')renderNomina();
+  if(id==='recibos')renderRecibos();
+  if(id==='irpf')renderIRPFTabla(0);
+  if(id==='reglas'){renderReglas();const bh=document.getElementById('base-horas');if(bh)bh.value=baseHoras;const bd=document.getElementById('base-dias');if(bd)bd.value=baseDias;}
+  if(id==='firebase')setTimeout(()=>{if(window._renderFBBanner)window._renderFBBanner();},100);
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function cambiarPeriodo(p){
+  periodoActual=p;window._periodo=p;
+  document.getElementById('titulo-periodo').textContent=p;
+  document.getElementById('rec-periodo').textContent=p;
+  loadLocal();
+  if(window._fbActivo&&window._fbSub)window._fbSub();
+  renderNomina();
+}
+
+// ══════════════════════════════════════════════
+// NÓMINA
+// ══════════════════════════════════════════════
+function renderNomina(){
+  const lista=getEmpleados();actualizarSBCount();
+  const tot=lista.reduce((a,e)=>{const r=liquidar(e);a.h+=r.hab;a.b+=r.bps;a.i+=r.irpf;a.l+=r.liq;return a;},{h:0,b:0,i:0,l:0});
+  document.getElementById('nomina-metrics').innerHTML=`
+    <div class="mc"><div class="mc-l">Empleados</div><div class="mc-v">${lista.length}</div></div>
+    <div class="mc"><div class="mc-l">Total haberes</div><div class="mc-v blue">${fmt(tot.h)}</div></div>
+    <div class="mc"><div class="mc-l">BPS total</div><div class="mc-v red">${fmt(tot.b)}</div></div>
+    <div class="mc hl"><div class="mc-l">Líquido total</div><div class="mc-v green">${fmt(tot.l)}</div></div>`;
+  const fn=(document.getElementById('f-nom').value||'').toLowerCase();
+  const fc=(document.getElementById('f-cargo').value||'').toLowerCase();
+  const fs=document.getElementById('f-sit').value;
+  let fil=lista.filter(e=>{
+    if(fn&&!((e.nombre||'').toLowerCase().includes(fn)||String(e.numero||'').includes(fn)))return false;
+    if(fc&&!(e.cargo||'').toLowerCase().includes(fc))return false;
+    if(fs==='obs'&&!(e.observaciones||'').trim())return false;
+    if(fs==='cert'&&!(e.observaciones||'').toUpperCase().includes('CERT'))return false;
+    if(fs==='maternal'&&!e.licenciaMaternal)return false;
+    if(fs==='baja'&&!e.baja)return false;
+    if(fs==='ret'&&!(e.pctRetencion>0||e.retencionJudicial>0))return false;
+    return true;
+  });
+  const body=document.getElementById('nomina-body');
+  if(!fil.length){body.innerHTML=`<tr><td colspan="11" class="empty-msg">Sin empleados</td></tr>`;return;}
+  body.innerHTML=fil.map(e=>{
+    const r=liquidar(e);
+    const obs=(e.observaciones||'').trim();
+    const pills=[e.licenciaMaternal?'<span class="pill m">MAT</span>':'',e.lactancia?'<span class="pill l">LACT</span>':'',e.baja?'<span class="pill baja">BAJA</span>':'',(e.pctRetencion>0||e.retencionJudicial>0)?'<span class="pill rj">RJ</span>':''].join('');
+    return `<tr class="tr-c" onclick="abrirFormEditar('${e.id}')">
+      <td class="tn">${e.numero||''}</td><td class="tnom">${e.nombre||''}</td>
+      <td class="tcargo" style="font-size:12px">${e.cargo||''}</td>
+      <td class="tm">${fmt(e.sueldo)}</td><td class="tm b">${fmt(r.hab)}</td>
+      <td class="tm r">${fmt(r.bps)}</td><td class="tm r">${fmt(r.irpf)}</td>
+      <td class="tm g">${fmt(r.liq)}</td>
+      <td onclick="event.stopPropagation()">
+        ${obs?`<span class="obs-cell" onclick="editarObsInline('${e.id}',this)" title="${obs.replace(/"/g,'&quot;')}">${obs.substring(0,30)}${obs.length>30?'…':''}</span>`
+          :`<span style="font-size:11px;color:var(--g400);cursor:pointer" onclick="editarObsInline('${e.id}',this)">+ agregar</span>`}
+      </td>
+      <td>${pills}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="ib" onclick="exportReciboPDF('${e.id}')" title="PDF">📄</button>
+        <button class="ib d" onclick="eliminarEmp('${e.id}','${(e.nombre||'').replace(/'/g,"\\'")}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+window._renderNomina=renderNomina;
+
+function editarObsInline(id,el){
+  const emp=getEmpleados().find(e=>e.id===id);if(!emp)return;
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='obs-inline';inp.value=emp.observaciones||'';inp.placeholder='Observación…';
+  el.parentNode.innerHTML='';el.parentNode.appendChild(inp);inp.focus();inp.select();
+  const save=async()=>{emp.observaciones=inp.value.trim();await saveEmp(emp);renderNomina();};
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape')renderNomina();});
+}
+
+// ══════════════════════════════════════════════
+// FORM
+// ══════════════════════════════════════════════
+const FLDS=[
+  ['numero','f-numero'],['ci','f-ci'],['nombre','f-nombre'],['cargo','f-cargof'],
+  ['ingreso','f-ingreso'],['pctAporte','f-aporte'],
+  ['sueldo','f-sueldo'],['presentismo','f-presentismo'],['antiguedad','f-antiguedad'],
+  ['quebranto','f-queb'],['horarioMaternal','f-mat'],['horarioLactancia','f-lact'],
+  ['faltasComunes','f-falt-c'],['faltasBpsBse','f-falt-b'],['llegadasTarde','f-tarde'],
+  ['adelanto','f-adel'],['adelantoNomina','f-adel-n'],['creditosCasa','f-cred'],
+  ['vale','f-vale'],['sobregiróSueldo','f-sob'],['descuentoQuebranto','f-dqueb'],
+  ['anda','f-anda'],['cash','f-cash'],['fucac','f-fucac'],['cacsol','f-cacsol'],
+  ['retencionJudicial','f-ret'],['pctRetencion','f-ret-pct'],
+  ['diasLibres','f-dlibres'],['mediosLibres','f-mlibres'],['observaciones','f-obs'],
+  ['snisadTipo','f-snisad-tipo'],['hijosSnisad','f-hijos'],
+];
+const CHKS=[['licenciaMaternal','f-chk-mat'],['lactancia','f-chk-lact'],['enLicencia','f-chk-lic'],['bse','f-chk-bse'],['baja','f-chk-baja']];
+
+function leerForm(){
+  const e={};
+  FLDS.forEach(([k,id])=>{const el=document.getElementById(id);if(el)e[k]=el.value;});
+  CHKS.forEach(([k,id])=>{const el=document.getElementById(id);if(el)e[k]=el.checked;});
+  reglas.forEach(r=>{const el=document.getElementById('cr-'+r.id);if(el)e['c_'+r.id]=+el.value||0;});
+  e.varsEmp=varsEmpActuales.map(v=>({...v}));
+  return e;
+}
+
+function llenarForm(e){
+  FLDS.forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=e[k]!==undefined?e[k]:'';});
+  CHKS.forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.checked=!!e[k];});
+  // limpiar y rellenar cantidades
+  reglas.forEach(r=>{const el=document.getElementById('cr-'+r.id);if(el)el.value=e['c_'+r.id]||'';});
+  varsEmpActuales=(e.varsEmp||[]).map(v=>({...v}));
+  renderVarsEmp();recalcTodosConceptos();
+}
+
+function limpiarForm(){
+  FLDS.forEach(([k,id])=>{const el=document.getElementById(id);if(!el)return;el.value=k==='pctAporte'?'0.196':'';});
+  CHKS.forEach(([,id])=>{const el=document.getElementById(id);if(el)el.checked=false;});
+  reglas.forEach(r=>{const el=document.getElementById('cr-'+r.id);if(el)el.value='';});
+  varsEmpActuales=[];renderVarsEmp();
+}
+
+function abrirFormNuevo(){
+  editandoId=null;limpiarForm();
+  document.getElementById('form-titulo').textContent='Nuevo empleado';
+  recalcTodosConceptos();recalcLive();
+  showPage('form',null);
+  document.querySelectorAll('.nav-btn')[1].classList.add('active');
+}
+
+function abrirFormEditar(id){
+  const emp=getEmpleados().find(e=>e.id===id);if(!emp)return;
+  editandoId=id;llenarForm(emp);
+  document.getElementById('form-titulo').textContent='Editar: '+(emp.nombre||'');
+  recalcLive();
+  showPage('form',null);
+  document.querySelectorAll('.nav-btn')[1].classList.add('active');
+}
+
+async function guardarEmpleado(){
+  const e=leerForm();
+  if(!(e.nombre||'').trim()){showToast('El nombre es obligatorio','err');return;}
+  if(editandoId)e.id=editandoId;
+  else e.id=e.numero?String(e.numero):Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const btn=document.querySelector('#page-form .btn-p');
+  if(btn){btn.disabled=true;btn.textContent='Guardando…';}
+  await saveEmp(e);
+  if(btn){btn.disabled=false;btn.textContent='💾 Guardar';}
+  showToast((editandoId?'Actualizado':'Guardado')+' ✓');
+  editandoId=null;
+  showPage('nomina',null);
+  document.querySelectorAll('.nav-btn')[0].classList.add('active');
+}
+
+function autoAntig(){
+  const ing=document.getElementById('f-ingreso').value;
+  const s=+document.getElementById('f-sueldo').value||0;
+  if(!ing||!s)return;
+  const anos=Math.floor((new Date()-new Date(ing))/(365.25*24*3600*1000));
+  document.getElementById('f-antiguedad').value=Math.round(s*.01*anos);
+  recalcLive();
+}
+
+function calcSnisad(){
+  const tipo=document.getElementById('f-snisad-tipo')?.value||'0';
+  const wrap=document.getElementById('f-hijos-wrap');
+  if(wrap) wrap.style.display=(tipo==='hijos'||tipo==='ambos')?'':'none';
+  const s=+document.getElementById('f-sueldo')?.value||0;
+  const hijos=+document.getElementById('f-hijos')?.value||1;
+  let pct=0;
+  if(tipo==='conyuge') pct=2;
+  else if(tipo==='hijos') pct=1.5*Math.max(1,hijos);
+  else if(tipo==='ambos') pct=2+1.5*Math.max(1,hijos);
+  const monto=Math.round(s*(pct/100));
+  const lbl=document.getElementById('snisad-label');
+  const mn=document.getElementById('snisad-monto');
+  if(lbl) lbl.textContent=pct.toFixed(1)+'%';
+  if(mn) mn.textContent=fmt(monto);
+}
+function recalcLive(){
+  const e=leerForm();const r=liquidar(e);
+  document.getElementById('fm-hab').textContent=fmt(r.hab);
+  document.getElementById('fm-bps').textContent=fmt(r.bps);
+  document.getElementById('fm-irpf').textContent=fmt(r.irpf);
+  document.getElementById('fm-liq').textContent=fmt(r.liq);
+  calcSnisad();
+}
+
+// ══════════════════════════════════════════════
+// RECIBOS
+// ══════════════════════════════════════════════
+function renderRecibos(){
+  document.getElementById('rec-periodo').textContent=periodoActual;
+  const lista=getEmpleados();
+  if(!lista.length){document.getElementById('recibos-grid').innerHTML='<div class="empty-msg">No hay empleados</div>';return;}
+  document.getElementById('recibos-grid').innerHTML=lista.map(e=>{
+    const r=liquidar(e);
+    return `<div class="rmini" onclick="exportReciboPDF('${e.id}')">
+      <div class="rmini-nom">${e.nombre||'—'}</div><div class="rmini-cargo">${e.cargo||'—'}</div>
+      <div class="rmini-liq">${fmt(r.liq)}</div><div class="rmini-btn">📥 Descargar PDF</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// IRPF
+// ══════════════════════════════════════════════
+const BPC=6644;
+const IRPF_F=[{d:0,h:84,t:0},{d:84,h:120,t:.10},{d:120,h:180,t:.15},{d:180,h:360,t:.20},{d:360,h:600,t:.22},{d:600,h:900,t:.25},{d:900,h:1380,t:.27},{d:1380,h:Infinity,t:.31}];
+function renderIRPFTabla(base){
+  document.getElementById('irpf-tbl').innerHTML=
+    `<thead><tr><th>Desde (BPC)</th><th>Hasta</th><th>Desde ($)</th><th>Hasta ($)</th><th>Tasa</th></tr></thead><tbody>`+
+    IRPF_F.map(f=>{const act=base>f.d*BPC&&base<=(f.h===Infinity?Infinity:f.h*BPC);
+      return `<tr class="${act?'hl-r':''}"><td>${f.d}</td><td>${f.h===Infinity?'∞':f.h}</td><td>${fmt(f.d*BPC)}</td><td>${f.h===Infinity?'Sin límite':fmt(f.h*BPC)}</td><td><strong>${(f.t*100).toFixed(0)}%</strong></td></tr>`;
+    }).join('')+'</tbody>';
+}
+function simIRPF(){
+  const s=+document.getElementById('sim-sueldo').value||0;
+  if(!s){document.getElementById('sim-resultado').innerHTML='';return;}
+  const bps=Math.round(s*.18),base=s-bps;
+  let irpf=0;for(const f of IRPF_F){if(base<=f.d*BPC)break;irpf+=(Math.min(base,f.h*BPC)-f.d*BPC)*f.t;}
+  irpf=Math.round(irpf);renderIRPFTabla(base);
+  document.getElementById('sim-resultado').innerHTML=`
+    <div class="mrow" style="grid-template-columns:1fr 1fr">
+      <div class="mc"><div class="mc-l">BPS (18%)</div><div class="mc-v red">${fmt(bps)}</div></div>
+      <div class="mc"><div class="mc-l">Base IRPF</div><div class="mc-v">${fmt(base)}</div></div>
+      <div class="mc"><div class="mc-l">IRPF mensual</div><div class="mc-v red">${fmt(irpf)}</div></div>
+      <div class="mc"><div class="mc-l">IRPF anual</div><div class="mc-v red">${fmt(irpf*12)}</div></div>
+      <div class="mc hl" style="grid-column:span 2"><div class="mc-l">Líquido estimado</div><div class="mc-v green">${fmt(s-bps-irpf)}</div></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+// EXCEL
+// ══════════════════════════════════════════════
+function exportExcel(){
+  const lista=getEmpleados();if(!lista.length){showToast('No hay empleados','err');return;}
+  const wb=XLSX.utils.book_new();
+  const hdrs=['N°','Nombre','Cargo','C.I.','Ingreso','Sueldo','Presentismo','Antigüedad','Quebranto','Maternal','Lactancia'];
+  reglas.filter(r=>r.activo&&(r.tipo==='hora'||r.tipo==='jornal')).forEach(r=>hdrs.push(r.nombre+' (cant.)'));
+  hdrs.push('HABERES','BPS','IRPF','Faltas','Llegadas','Adelanto','Adel.Nóm','Créditos','Vale','Sobregiro','Desc.Q','ANDA','CASH','FUCAC','CACSOL','Ret.Jud','DESC TOTAL','LÍQUIDO','% IRPF','Observaciones');
+  const rows=lista.map(e=>{
+    const r=liquidar(e);
+    const base=[e.numero,e.nombre,e.cargo,e.ci,e.ingreso,+e.sueldo||0,+e.presentismo||0,+e.antiguedad||0,+e.quebranto||0,+e.horarioMaternal||0,+e.horarioLactancia||0];
+    reglas.filter(rx=>rx.activo&&(rx.tipo==='hora'||rx.tipo==='jornal')).forEach(rx=>base.push(+e['c_'+rx.id]||0));
+    base.push(r.hab,r.bps,r.irpf,+e.faltasComunes||0,+e.llegadasTarde||0,+e.adelanto||0,+e.adelantoNomina||0,+e.creditosCasa||0,+e.vale||0,+e.sobregiróSueldo||0,+e.descuentoQuebranto||0,+e.anda||0,+e.cash||0,+e.fucac||0,+e.cacsol||0,r.ret,r.bps+r.irpf+r.descOtros,r.liq,((+e.pctAporte||.196)*100).toFixed(1)+'%',e.observaciones||'');
+    return base;
+  });
+  const ws=XLSX.utils.aoa_to_sheet([hdrs,...rows]);
+  XLSX.utils.book_append_sheet(wb,ws,'Nómina');
+  const t=lista.reduce((a,e)=>{const r=liquidar(e);a.h+=r.hab;a.b+=r.bps;a.i+=r.irpf;a.l+=r.liq;return a;},{h:0,b:0,i:0,l:0});
+  const wsr=XLSX.utils.aoa_to_sheet([['RESUMEN — '+periodoActual],[],['Empleados',lista.length],['Total haberes',t.h],['BPS',t.b],['IRPF',t.i],['LÍQUIDO',t.l],[],['Costo patronal BPS',Math.round(t.h*.12625)],['Costo empresa total',Math.round(t.h*1.12625)]]);
+  XLSX.utils.book_append_sheet(wb,wsr,'Resumen');
+  XLSX.writeFile(wb,'Nomina_Fadentix_'+periodoActual.replace(/ /g,'_')+'.xlsx');
+  showToast('Excel exportado ✓');
+}
+
+// ══════════════════════════════════════════════
+// PDF RECIBO
+// ══════════════════════════════════════════════
+function exportReciboPDF(id){
+  const e=getEmpleados().find(x=>x.id===id);if(!e){showToast('No encontrado','err');return;}
+  const r=liquidar(e);
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth();
+  doc.setFillColor(24,95,165);doc.rect(0,0,pw,22,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('FADENTIX S.A.',14,10);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('RUT: 21 XXXXXX 0013  ·  Maldonado, Uruguay  ·  Conv. Colectivo Grupo 7',14,16);
+  doc.text('Período: '+periodoActual,pw-14,10,{align:'right'});
+  doc.text('RECIBO DE SUELDO',pw-14,16,{align:'right'});
+  doc.setTextColor(30,30,30);
+  const hasObs=(e.observaciones||'').trim();
+  doc.setFillColor(240,245,251);doc.rect(10,26,pw-20,hasObs?27:20,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('N° '+(e.numero||'—')+'  '+(e.nombre||'—'),14,34);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Cargo: '+(e.cargo||'—'),14,40);
+  doc.text('C.I.: '+(e.ci||'—')+'   Ingreso: '+(e.ingreso||'—')+'   IRPF: '+((+e.pctAporte||.196)*100).toFixed(1)+'%',14,45);
+  if(hasObs){doc.setTextColor(100,60,0);doc.text('Obs: '+hasObs.substring(0,90),14,51);doc.setTextColor(30,30,30);}
+  const sY=hasObs?57:50;
+  const habRows=[];
+  if(+e.sueldo>0)habRows.push(['Sueldo nominal','$ '+fmtN(e.sueldo)]);
+  if(+e.presentismo>0)habRows.push(['Presentismo','$ '+fmtN(e.presentismo)]);
+  if(+e.antiguedad>0)habRows.push(['Antigüedad','$ '+fmtN(e.antiguedad)]);
+  if(+e.quebranto>0)habRows.push(['Quebranto de caja','$ '+fmtN(e.quebranto)]);
+  if(+e.horarioMaternal>0)habRows.push(['Horario maternal','$ '+fmtN(e.horarioMaternal)]);
+  if(+e.horarioLactancia>0)habRows.push(['Horario lactancia','$ '+fmtN(e.horarioLactancia)]);
+  r.det.forEach(d=>habRows.push([d.nombre+(d.cantidad>0?' ('+d.cantidad+')':''),'$ '+fmtN(d.importe)]));
+  doc.autoTable({startY:sY,head:[['HABERES','Importe']],body:habRows,foot:[['TOTAL HABERES','$ '+fmtN(r.hab)]],
+    headStyles:{fillColor:[24,95,165],textColor:255,fontSize:9,fontStyle:'bold'},
+    footStyles:{fillColor:[230,241,251],textColor:[12,68,124],fontStyle:'bold',fontSize:10},
+    bodyStyles:{fontSize:8.5},columnStyles:{0:{cellWidth:105},1:{cellWidth:44,halign:'right'}},
+    margin:{left:10,right:pw/2+5},tableWidth:pw/2-15});
+  const fy1=doc.lastAutoTable.finalY;
+  const dRows=[
+    ['BPS Jubilación (15%)','($ '+fmtN(r.bpsJub)+')'],
+    ['DISSE / SNIS (3%)','($ '+fmtN(r.bpsDisse)+')'],
+    ['FRL (0.1%)','($ '+fmtN(r.bpsFrl)+')'],
+  ];
+  if(r.bpsSnisad>0) dRows.push(['SNISAD ('+r.snisadPct.toFixed(1)+'%)','($ '+fmtN(r.bpsSnisad)+')']);
+  dRows.push(['IRPF / IASS ('+((+e.pctAporte||.196)*100).toFixed(1)+'%)','($ '+fmtN(r.irpf)+')']);
+  if(r.descFalt>0)dRows.push(['Faltas ('+((+e.faltasComunes||0))+' días)','($ '+fmtN(r.descFalt)+')']);
+  if(r.descTard>0)dRows.push(['Llegadas tarde','($ '+fmtN(r.descTard)+')']);
+  [['Adelanto',e.adelanto],['Adel. nómina',e.adelantoNomina],['Créditos casa',e.creditosCasa],['Vale período',e.vale],['Sobregiro',e.sobregiróSueldo],['ANDA',e.anda],['CASH',e.cash],['FUCAC',e.fucac],['CACSOL',e.cacsol]].filter(x=>+x[1]>0).forEach(x=>dRows.push([x[0],'($ '+fmtN(x[1])+')']));
+  if(r.ret>0)dRows.push(['Retención judicial','($ '+fmtN(r.ret)+')']);
+  doc.autoTable({startY:sY,head:[['DESCUENTOS','Importe']],body:dRows,foot:[['TOTAL DESCUENTOS','($ '+fmtN(r.bps+r.irpf+r.descOtros)+')']],
+    headStyles:{fillColor:[163,45,45],textColor:255,fontSize:9,fontStyle:'bold'},
+    footStyles:{fillColor:[252,235,235],textColor:[163,45,45],fontStyle:'bold',fontSize:10},
+    bodyStyles:{fontSize:8.5},columnStyles:{0:{cellWidth:82},1:{cellWidth:44,halign:'right'}},
+    margin:{left:pw/2+5,right:10},tableWidth:pw/2-15});
+  const fy=Math.max(fy1,doc.lastAutoTable.finalY)+7;
+  doc.setFillColor(24,95,165);doc.rect(10,fy,pw-20,13,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text('LÍQUIDO A COBRAR',16,fy+9);doc.text('$ '+fmtN(r.liq),pw-14,fy+9,{align:'right'});
+  const sy2=fy+24;
+  doc.setTextColor(80,80,80);doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.line(14,sy2,82,sy2);doc.line(pw/2+8,sy2,pw-14,sy2);
+  doc.text('Firma del trabajador',14,sy2+4);doc.text('Firma y sello empresa',pw/2+8,sy2+4);
+  doc.text('Aclaración: '+(e.nombre||''),14,sy2+9);doc.text('C.I.: '+(e.ci||''),14,sy2+14);
+  doc.setFontSize(7);doc.setTextColor(160,160,160);
+  doc.text('FADENTIX — Liquidación de Sueldos Uruguay',pw/2,287,{align:'center'});
+  doc.save('Recibo_'+(e.nombre||'emp').replace(/ /g,'_')+'_'+periodoActual.replace(/ /g,'_')+'.pdf');
+  showToast('Recibo PDF descargado ✓');
+}
+
+function exportNominaPDF(){
+  const lista=getEmpleados();if(!lista.length){showToast('No hay empleados','err');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth();
+  doc.setFillColor(24,95,165);doc.rect(0,0,pw,16,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text('FADENTIX S.A. — NÓMINA DE SUELDOS',14,10);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Período: '+periodoActual,pw-14,10,{align:'right'});
+  const t=lista.reduce((a,e)=>{const r=liquidar(e);a.h+=r.hab;a.b+=r.bps;a.i+=r.irpf;a.d+=r.bps+r.irpf+r.descOtros;a.l+=r.liq;return a;},{h:0,b:0,i:0,d:0,l:0});
+  doc.autoTable({startY:20,
+    head:[['N°','Nombre','Cargo','Sueldo','Haberes','BPS','IRPF','Descuentos','LÍQUIDO','Observaciones']],
+    body:lista.map(e=>{const r=liquidar(e);return[e.numero,e.nombre,e.cargo,'$ '+fmtN(e.sueldo),'$ '+fmtN(r.hab),'$ '+fmtN(r.bps),'$ '+fmtN(r.irpf),'$ '+fmtN(r.bps+r.irpf+r.descOtros),'$ '+fmtN(r.liq),(e.observaciones||'').substring(0,40)];}),
+    foot:[['','TOTALES ('+lista.length+' emp.)','','','$ '+fmtN(t.h),'$ '+fmtN(t.b),'$ '+fmtN(t.i),'$ '+fmtN(t.d),'$ '+fmtN(t.l),'']],
+    headStyles:{fillColor:[24,95,165],textColor:255,fontSize:7.5,fontStyle:'bold'},
+    footStyles:{fillColor:[230,241,251],textColor:[12,68,124],fontStyle:'bold'},
+    bodyStyles:{fontSize:7},alternateRowStyles:{fillColor:[248,250,253]},
+    columnStyles:{0:{cellWidth:10},1:{cellWidth:44},2:{cellWidth:36},3:{cellWidth:18,halign:'right'},4:{cellWidth:20,halign:'right'},5:{cellWidth:18,halign:'right'},6:{cellWidth:18,halign:'right'},7:{cellWidth:20,halign:'right'},8:{cellWidth:22,halign:'right'},9:{cellWidth:50}},
+    margin:{left:8,right:8}});
+  doc.save('Nomina_Fadentix_'+periodoActual.replace(/ /g,'_')+'.pdf');
+  showToast('PDF exportado ✓');
+}
+
+// ══════════════════════════════════════════════
+// DEMO
+// ══════════════════════════════════════════════
+async function cargarDemo(){
+  if(!confirm('¿Cargar empleados de ejemplo FADENTIX?'))return;
+  const demo=[
+    {id:'d1',numero:2,nombre:'Nibia González Castro',cargo:'Jefa de Cajas',ci:'3.590.898',ingreso:'2016-08-12',sueldo:39906,presentismo:2700,antiguedad:10974,pctAporte:0.196,observaciones:''},
+    {id:'d2',numero:4,nombre:'José Ignacio Borghini Pérez',cargo:'Jefe Sección Carnicería',ci:'4.360.648',ingreso:'2016-08-12',sueldo:46742,presentismo:2700,antiguedad:17528,'c_fer-c':3,pctAporte:0.196,observaciones:''},
+    {id:'d3',numero:5,nombre:'Maira Rojas',cargo:'Sub Jefa de Cajas',ci:'4.463.645',ingreso:'2016-08-12',sueldo:38280,presentismo:2700,antiguedad:9570,pctAporte:0.211,observaciones:''},
+    {id:'d4',numero:141,nombre:'Alicia Elizabeth Altez Sosa',cargo:'Jefe Sección Administración',ci:'3.969.397',ingreso:'2020-07-01',sueldo:68378,presentismo:2700,antiguedad:6838,adelanto:15000,pctAporte:0.196,observaciones:''},
+    {id:'d5',numero:314,nombre:'Melanie Magdalena Kolln Lopez',cargo:'Aux Ventas Calificado',ci:'4.675.546',ingreso:'2023-05-15',sueldo:36190,presentismo:2700,antiguedad:660,horarioLactancia:1,faltasBpsBse:6,lactancia:true,pctAporte:0.211,observaciones:'CERTIFICADA 11/05 AL 16/05 — LACTANCIA VIGENTE'},
+    {id:'d6',numero:426,nombre:'Christofer Olivera Victorino',cargo:'Jefe de Sección',ci:'5.333.583',ingreso:'2024-03-01',sueldo:43865,presentismo:2700,antiguedad:660,adelanto:5000,'c_noct-p':1,pctRetencion:20,pctAporte:0.231,observaciones:'RETENCIÓN JUDICIAL 20%'},
+    {id:'d7',numero:506,nombre:'Richard Marcelo Ruiz Zeballos',cargo:'Oficial Elaboración Carnicería',ci:'3.551.827',ingreso:'2024-05-10',sueldo:50541,presentismo:2700,antiguedad:330,'c_fer-c':3,'c_noct-p':1,adelanto:10000,adelantoNomina:8500,anda:4174,cacsol:21802,pctAporte:0.196,observaciones:'20 DÍAS LICENCIA'},
+    {id:'d8',numero:826,nombre:'Pablo Daniel Rodríguez Ruiz',cargo:'Jefe Sección Panadería',ci:'3.503.208',ingreso:'2026-02-01',sueldo:119344,presentismo:2700,'c_fer-c':1,pctAporte:0.216,observaciones:''},
+    {id:'d9',numero:752,nombre:'Ivonne Elibet Ayala Custiel',cargo:'Aprendiz Elaboración Rotisería',ci:'4.889.261',ingreso:'2025-10-15',sueldo:34079,presentismo:2700,faltasBpsBse:30,licenciaMaternal:true,pctAporte:0.211,observaciones:'LICENCIA MATERNAL 24/04 AL 30/07'},
+    {id:'d10',numero:844,nombre:'Ruben Leonardo Ferreira Rodriguez',cargo:'Oficial Elaboración Panadería',ci:'3.828.256',ingreso:'2026-03-15',sueldo:51106,presentismo:2700,'c_ext-f':4,adelanto:8000,pctRetencion:20,pctAporte:0.196,observaciones:'RETENCIÓN JUDICIAL 20%'},
+  ];
+  if(window._fbActivo&&window._fbSave){
+    showToast('Subiendo a Firebase…','info');
+    for(const emp of demo)await window._fbSave(emp);
+    showToast('Demo subido ✓');
+  }else{
+    window._empleados=demo;saveLocal();renderNomina();
+    showToast('Demo cargado ✓ ('+demo.length+' empleados)');
+  }
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function setSyncState(e,l){
+  const d=document.getElementById('sync-dot'),lb=document.getElementById('sync-label');
+  if(d)d.className='sync-dot '+e;if(lb)lb.textContent=l;
+}
+let _tt;
+function showToast(msg,tipo='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+tipo+' show';
+  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  cargarReglas();
+  loadLocal();
+  renderNomina();
+  renderIRPFTabla(0);
+  renderConceptosForm();
+  document.getElementById('titulo-periodo').textContent=periodoActual;
+  document.getElementById('rec-periodo').textContent=periodoActual;
+});
+</script>
+</body>
+</html>
